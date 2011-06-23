@@ -176,7 +176,7 @@ def naca4(number, n):
     return ptList;
 
 """
-Returns n points in [0 1] for the given 5 digit NACA number string
+Returns n points (for EACH HALF) in [0 1] for the given 5 digit NACA number string
 """
 def naca5(number,n):
 
@@ -191,8 +191,6 @@ def naca5(number,n):
     p = 0.5*naca23/100.0;
     t = naca45/100.0;
 
-    npoints_half = n/2+1;
-
     a0 =  0.2969;
     a1 = -0.1260;
     a2 = -0.3516;
@@ -204,10 +202,10 @@ def naca5(number,n):
         a4 = -0.1036;  # For zero thickness trailing edge
     
     if half_cosine_spacing:
-        beta = linspace(0.0,math.pi,npoints_half)
+        beta = linspace(0.0,math.pi,n+1)
         x = map(lambda x : (0.5*(1.0-math.cos(x))),beta)  # Half cosine based spacing
     else:
-        x = linspace(0.0,1.0,npoints_half)
+        x = linspace(0.0,1.0,n+1)
 
     yt = map(lambda xx : (t/0.2)*(a0*math.sqrt(xx)+a1*xx+a2*math.pow(xx,2)+a3*math.pow(xx,3)+a4*math.pow(xx,4)),x);
 
@@ -258,7 +256,7 @@ if __name__ == "__main__":
     
     # Examples
     #pts = naca4("2441",60)
-    pts = naca5("23015",60)
+    pts = naca5("23015",30)
     
     for p in pts:
         print p[0],p[1]
