@@ -1,6 +1,9 @@
 """
 Python code to generate 4 and 5 digit NACA profiles
 
+The 5 digit version is aort of the Matlab code available here:
+    http://www.mathworks.com/matlabcentral/fileexchange/23241-naca-5-digit-airfoil-generator/content/naca5gen.m
+    
 Copyright (C) 2011 by Dirk Gorissen <dgorissen@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -23,6 +26,19 @@ THE SOFTWARE.
 """
 
 import math
+
+"""
+Emulate Matlabs linspace
+"""
+def linspace(start,stop,np):
+
+    delta = (stop - start) / (np - 1.0)
+    
+    p = [start]
+    for i in range(np-1):
+        p.append(p[-1] + delta)
+
+    return p
 
 """
 A cubic spline interpolation on a given set of points (x,y)
@@ -104,7 +120,7 @@ def Interpolate(xa,ya,queryPoints):
 Returns n points in [0 1] for the given 4 digit NACA number string
 """
 def naca4(number, n):
-
+    # TODO: make more pythonic, like naca5
     naca1 = int(number[0]);
     naca2 = int(number[1]);
     naca34 = int(number[2:]);
@@ -164,74 +180,85 @@ Returns n points in [0 1] for the given 5 digit NACA number string
 """
 def naca5(number,n):
 
+    finite_TE = False
+    half_cosine_spacing = False
+    
     naca1 = int(number[0]);
     naca23 = int(number[1:3]);
     naca45 = int(number[3:]);
 
-    cld = naca1*0.75/10.0;
-    pl = 0.5*naca23/100.0;
-    dl = naca45/100.0;
+    cld = naca1*(3.0/2.0)/10.0;
+    p = 0.5*naca23/100.0;
+    t = naca45/100.0;
 
-    m = n/2+1;
+    npoints_half = n/2+1;
 
-    # Airfoil-Drop
-    a0 = 1.4845;
-    a1 = -0.63;
-    a2 = -1.7580;
-    a3 = 1.4215;
-    a4 = -0.5075;
+    a0 =  0.2969;
+    a1 = -0.1260;
+    a2 = -0.3516;
+    a3 = 0.2843;
 
-    # Create the point objects
-    ptList = [[0.0,0.0] for i in range(n)];
+    if finite_TE:
+        a4 = -0.1015; # For finite thickness trailing edge
+    else:
+        a4 = -0.1036;  # For zero thickness trailing edge
+    
+    if half_cosine_spacing:
+        beta = linspace(0.0,math.pi,npoints_half)
+        x = map(lambda x : (0.5*(1.0-math.cos(x))),beta)  # Half cosine based spacing
+    else:
+        x = linspace(0.0,1.0,npoints_half)
 
-    # Calculate the points ...
-
-    # TrailingEdge
-    ptList[0] = [1.0,0.0]
+    yt = map(lambda xx : (t/0.2)*(a0*math.sqrt(xx)+a1*xx+a2*math.pow(xx,2)+a3*math.pow(xx,3)+a4*math.pow(xx,4)),x);
 
     P = [0.05,0.1,0.15,0.2,0.25]
     M = [0.0580,0.1260,0.2025,0.2900,0.3910]
     K = [361.4,51.64,15.957,6.643,3.230]
-    mll = Interpolate(P,M,[pl])
 
-    ml = mll[0];
-
-    k1l = Interpolate(M,K,[ml]);
-    k1 = k1l[0];
+    m = Interpolate(P,M,[p])[0]
+    k1 = Interpolate(M,K,[m])[0]
     
-    for i in range(1,m-1):
-        x=1.0-0.5*(1.0-math.cos(math.pi*(1.0*i)/(1.0*m-1.0)));
-        yt=dl*(a0*math.sqrt(x)+x*(a1+x*(a2+x*(a3+x*a4))));
+    xc1 = filter(lambda xx: xx <= p, x);
+    xc2 = filter(lambda xx: xx > p, x);
+    xc = xc1 + xc2;
+    
+    if p == 0:
+        xu = x
+        yu = yt
         
-        if (x<=pl):
-            y = cld/0.3 * (1.0/6.0)*k1*( math.pow(x,3)-3.0*ml*math.pow(x,2)+ml*ml*(3.0-ml)*x );
-            dy = (1.0/6.0)*k1*( 3.0*math.pow(x,2)-6.0*ml*x+ml*ml*(3.0-ml) );
-        else:
-            y = cld/0.3 * (1.0/6.0)*k1*math.pow(ml,3)*(1.0-x);
-            dy = -(1.0/6.0)*k1*math.pow(ml,3);
-
-        theta = math.atan(dy);
-        xu = x-yt*math.sin(theta);
-        yu = y+yt*math.cos(theta);
-        xl = x+yt*math.sin(theta);
-        yl = y-yt*math.cos(theta);
+        xl = x
+        yl = -yt
         
-        # upper point
-        ptList[i] = [xu,yu];
+        zc = [0]*len(xc)
+    else:
+        yc1 = map(lambda xx : (1.0/6.0)*k1*( math.pow(xx,3)-3*m*math.pow(xx,2)+ math.pow(m,2)*(3-m)*xx),xc1)
+        yc2 = map(lambda xx : (1.0/6.0)*k1*math.pow(m,3)*(1-xx),xc2)
+        zc = map(lambda xx : (cld/0.3) * xx, yc1 + yc2)
 
-        # lower point
-        ptList[n-i] = [xl,yl];
+        dyc1_dx = map(lambda xx : cld/0.3*(1.0/6.0)*k1*( 3*math.pow(xx,2)-6*m*xx+math.pow(m,2)*(3-m) ), xc1);
+        dyc2_dx = [cld/0.3*(1.0/6.0)*k1*math.pow(m,3)]*len(xc2);
+        
+        dyc_dx = dyc1_dx + dyc2_dx;
+        theta = map(lambda xx : math.atan(xx),dyc_dx);
 
-    # LeadingEdge point
-    ptList[m-1] = [0.0,0.0]
+        xu = map(lambda xx,yy,zz: xx - yy * math.sin(zz),x,yt,theta);
+        yu = map(lambda xx,yy,zz: xx + yy * math.cos(zz),zc,yt,theta);
 
-    return ptList;
+        xl = map(lambda xx,yy,zz: xx + yy * math.sin(zz),x,yt,theta)
+        yl = map(lambda xx,yy,zz: xx - yy * math.cos(zz),zc,yt,theta)
+
+    X = xu[::-1] + xl[1:];
+    Z = yu[::-1] + yl[1:];
+  
+    pts = zip(X,Z)
+
+    return pts
 
 if __name__ == "__main__":
     
     # Examples
-    pts = naca4("2441",100)
-    #pts = naca5("23015",100)
+    #pts = naca4("2441",60)
+    pts = naca5("23015",60)
     
     for p in pts:
         print p[0],p[1]
