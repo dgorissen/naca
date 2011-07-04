@@ -1,8 +1,9 @@
 """
 Python code to generate 4 and 5 digit NACA profiles
 
-The 5 digit version is aort of the Matlab code available here:
-    http://www.mathworks.com/matlabcentral/fileexchange/23241-naca-5-digit-airfoil-generator/content/naca5gen.m
+Pots of the Matlab code available here:
+    http://www.mathworks.com/matlabcentral/fileexchange/19915-naca-4-digit-airfoil-generator
+    http://www.mathworks.com/matlabcentral/fileexchange/23241-naca-5-digit-airfoil-generator
     
 Copyright (C) 2011 by Dirk Gorissen <dgorissen@gmail.com>
 
@@ -117,64 +118,71 @@ def Interpolate(xa,ya,queryPoints):
     return results;
 
 """
-Returns n points in [0 1] for the given 4 digit NACA number string
+Returns n points (for EACH HALF) in [0 1] for the given 4 digit NACA number string
 """
 def naca4(number, n):
-    # TODO: make more pythonic, like naca5
-    naca1 = int(number[0]);
-    naca2 = int(number[1]);
-    naca34 = int(number[2:]);
     
-    ml = naca1/100.0;
-    pl = naca2/10.0;
-    dl = naca34/100.0;
-
-    m = n/2+1;
+    finite_TE = False
+    half_cosine_spacing = False
     
-    # Airfoil-Drop
-    a0 = 1.4845;
-    a1 = -0.63;
-    a2 = -1.7580;
-    a3 = 1.4215;
-    a4 = -0.5075;
+    m = float(number[0])/100.0;
+    p = float(number[1])/10.0;
+    t = float(number[2:])/100.0;
 
-    # Create the point objects
-    ptList = [[0,0] for i in range(n)];
+    a0 = 0.2969;
+    a1 = -0.1260;
+    a2 = -0.3516;
+    a3 = 0.2843;
+
+    if finite_TE:
+        a4 = -0.1015 # For finite thick TE
+    else:
+        a4 = -0.1036  # For zero thick TE
+
+    if half_cosine_spacing:
+        beta = linspace(0.0,math.pi,n+1)
+        x = map(lambda xx : (0.5*(1.0-math.cos(xx))),beta)  # Half cosine based spacing
+    else:
+        x = linspace(0.0,1.0,n+1)
     
-    #Calculate the points ...
+    yt = map(lambda xx: (t/0.2)*(a0*math.sqrt(xx)+a1*xx+a2*math.pow(xx,2)+a3*math.pow(xx,3)+a4*math.pow(xx,4)),x);
 
-    #TrailingEdge
-    ptList[0] = [1.0,0.0]
-               
-    # Between
-    for i in range(1,m-1):
-        x=1.0-0.5*(1.0-math.cos(math.pi*(1.0*i)/(1.0*m-1.0)))
-        yt=dl*(a0*math.sqrt(x)+x*(a1+x*(a2+x*(a3+x*a4))))
+    xc1 = filter(lambda xx: xx <= p, x);
+    xc2 = filter(lambda xx: xx > p, x);
+    xc = xc1 + xc2;
+
+    if p == 0:
+        xu = x;
+        yu = yt;
+
+        xl = x;
+        yl = [-xx for xx in yt];
+    
+        zc = [0]*len(xc)
+    else:
+        yc1 = map(lambda xx: (m/math.pow(p,2))*(2*p*xx-math.pow(xx,2)),xc1);
+        yc2 = map(lambda xx: (m/math.pow((1-p),2))*((1-2*p)+2*p*xx-math.pow(xx,2)),xc2);
+        zc = yc1 + yc2
+
+        dyc1_dx = map(lambda xx: (m/math.pow(p,2))*(2*p-2*xx),xc1);
+        dyc2_dx = map(lambda xx: (m/math.pow((1-p),2))*(2*p-2*xx),xc2);
+        dyc_dx = dyc1_dx + dyc2_dx;
         
-        if (x<=pl):
-            y = (ml/math.pow(pl,2))*(2.0*pl-x)*x;
-            dy = (ml/math.pow(pl,2))*(2.0*pl-2.0*x)
-        else:
-            y = (ml/math.pow((1.0-pl),2))*((1.0-2.0*pl)+2.0*pl*x-math.pow(x,2))
-            dy = (ml/math.pow((1.0-pl),2))*(2.0*pl-2.0*x)
-
-        theta = math.atan(dy);
-        xu = x-yt*math.sin(theta);
-        yu = y+yt*math.cos(theta);
-        xl = x+yt*math.sin(theta);
-        yl = y-yt*math.cos(theta);
-
-        # upper point
-        ptList[i] = [xu,yu];
+        theta = [math.atan(xx) for xx in dyc_dx];
+    
+        xu = map(lambda xx,yy,zz: xx-yy * math.sin(zz),x,yt,theta);
+        yu = map(lambda xx,yy,zz: xx+yy * math.cos(zz),zc,yt,theta);
+    
+        xl = map(lambda xx,yy,zz: xx + yy * math.sin(zz),x,yt,theta);
+        yl = map(lambda xx,yy,zz: xx - yy * math.cos(zz),zc,yt,theta);
         
-        #lower point
-        ptList[n-i] = [xl,yl];
+        X = xu[::-1] + xl[1:]
+        Z = yu[::-1] + yl[1:]
+    
+        pts = zip(X,Z)
 
-    # LeadingEdge point
-    ptList[m-1] = [0.0,0.0];
-
-    return ptList;
-
+        return pts
+    
 """
 Returns n points (for EACH HALF) in [0 1] for the given 5 digit NACA number string
 """
@@ -225,8 +233,8 @@ def naca5(number,n):
         yu = yt
         
         xl = x
-        yl = -yt
-        
+        yl = [-x for x in yt];
+    
         zc = [0]*len(xc)
     else:
         yc1 = map(lambda xx : (1.0/6.0)*k1*( math.pow(xx,3)-3*m*math.pow(xx,2)+ math.pow(m,2)*(3-m)*xx),xc1)
@@ -237,7 +245,7 @@ def naca5(number,n):
         dyc2_dx = [cld/0.3*(1.0/6.0)*k1*math.pow(m,3)]*len(xc2);
         
         dyc_dx = dyc1_dx + dyc2_dx;
-        theta = map(lambda xx : math.atan(xx),dyc_dx);
+        theta = [math.atan(xx) for xx in dyc_dx];
 
         xu = map(lambda xx,yy,zz: xx - yy * math.sin(zz),x,yt,theta);
         yu = map(lambda xx,yy,zz: xx + yy * math.cos(zz),zc,yt,theta);
@@ -255,8 +263,8 @@ def naca5(number,n):
 if __name__ == "__main__":
     
     # Examples
-    #pts = naca4("2441",60)
-    pts = naca5("23015",30)
+    pts = naca4("2418",60)
+    #pts = naca5("23015",60)
     
     for p in pts:
         print p[0],p[1]
