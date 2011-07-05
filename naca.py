@@ -176,12 +176,12 @@ def naca4(number, n):
         xl = map(lambda xx,yy,zz: xx + yy * math.sin(zz),x,yt,theta);
         yl = map(lambda xx,yy,zz: xx - yy * math.cos(zz),zc,yt,theta);
         
-        X = xu[::-1] + xl[1:]
-        Z = yu[::-1] + yl[1:]
+    X = xu[::-1] + xl[1:]
+    Z = yu[::-1] + yl[1:]
     
-        pts = zip(X,Z)
+    pts = zip(X,Z)
 
-        return pts
+    return pts
     
 """
 Returns n points (for EACH HALF) in [0 1] for the given 5 digit NACA number string
@@ -263,7 +263,7 @@ def naca5(number,n):
 if __name__ == "__main__":
     
     # Examples
-    pts = naca4("2418",60)
+    pts = naca4("0012",60)
     #pts = naca5("23015",60)
     
     for p in pts:
