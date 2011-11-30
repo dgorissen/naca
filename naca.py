@@ -224,8 +224,8 @@ def naca5(number,n):
     m = Interpolate(P,M,[p])[0]
     k1 = Interpolate(M,K,[m])[0]
     
-    xc1 = filter(lambda xx: xx <= p, x);
-    xc2 = filter(lambda xx: xx > p, x);
+    xc1 = filter(lambda xx: xx <= m, x);
+    xc2 = filter(lambda xx: xx > m, x);
     xc = xc1 + xc2;
     
     if p == 0:
