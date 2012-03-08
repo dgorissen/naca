@@ -120,10 +120,7 @@ def Interpolate(xa,ya,queryPoints):
 """
 Returns n points (for EACH HALF) in [0 1] for the given 4 digit NACA number string
 """
-def naca4(number, n):
-    
-    finite_TE = False
-    half_cosine_spacing = False
+def naca4(number, n, finite_TE=False, half_cosine_spacing=False):
     
     m = float(number[0])/100.0;
     p = float(number[1])/10.0;
@@ -186,10 +183,7 @@ def naca4(number, n):
 """
 Returns n points (for EACH HALF) in [0 1] for the given 5 digit NACA number string
 """
-def naca5(number,n):
-
-    finite_TE = False
-    half_cosine_spacing = False
+def naca5(number, n, finite_TE=False, half_cosine_spacing=False):
     
     naca1 = int(number[0]);
     naca23 = int(number[1:3]);
