@@ -1,5 +1,5 @@
 """
-Python code to generate 4 and 5 digit NACA profiles
+Python 2 and 3 code to generate 4 and 5 digit NACA profiles
 
 Pots of the Matlab code available here:
     http://www.mathworks.com/matlabcentral/fileexchange/19915-naca-4-digit-airfoil-generator
@@ -260,34 +260,57 @@ def naca(number, n, finite_TE=False, half_cosine_spacing=False):
     else:
         raise Exception
 
+class Display(object):
+    def __init__(self):
+        import matplotlib.pyplot as plt
+        self.plt = plt
+        self.h = []
+        self.label = []
+        self.fig, self.ax = plt.subplots()
+        plt.axis('equal')
+        self.ax.grid(True)
+    def plot(self, X, Y,label=''):
+        h, = self.plt.plot(X, Y, '-', linewidth = 1)
+        self.h.append(h)
+        self.label.append(label)
+    def show(self):
+        self.plt.axis((-0.1,1.1)+self.plt.axis()[2:])
+        self.ax.legend(self.h, self.label)
+        self.plt.show()
+
 def demo(profNaca = ['0009', '2414', '6409'], nPoints = 240):
     #profNaca = ['0009', '0012', '2414', '2415', '6409' , '0006', '0008', '0010', '0012', '0015']
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots()
-    plt.axis('equal')
-    ax.grid(True)
-    hp = [None]*len(profNaca)
+    d = Display()
     for i,p in enumerate(profNaca):
         X,Y = naca(p, nPoints)
-        hp[i], = plt.plot(X, Y, '-', linewidth = 1, label = p)
-    plt.axis((-0.1,1.1)+plt.axis()[2:])
-    ax.legend(hp, profNaca)
-    plt.show()
+        d.plot(X, Y, p)
+    d.show()
 
 def main():
     import argparse
     parser = argparse.ArgumentParser(description = \
         'Script to create NACA4 and NACA5 profiles.' \
         'If no argument is provided, a demo is displayed')
-    parser.add_argument('-p','--profile')
+    parser.add_argument('-p','--profile', type = str)
     parser.add_argument('-n','--nbPoints', type = int, default = 120)
+    parser.add_argument('-f','--finite_TE', action = 'store_true', help = 'Finite thickness trailing edge')
+    parser.add_argument('-s','--half_cosine_spacing', action = 'store_true', help = 'Half cosine based spacing')
+    parser.add_argument('-d','--display', action = 'store_true')
     args = parser.parse_args()
     if args.profile is None:
         demo(nPoints = args.nbPoints)
     else:
-        X,Y = naca(args.profile, args.nbPoints)
-        for x,y in zip(X,Y):
-            print(x,y)
+        if args.display:
+            d = Display()
+            for p in args.profile.split(' '):
+                X,Y = naca(p, args.nbPoints, args.finite_TE, args.half_cosine_spacing)
+                d.plot(X, Y, p)
+            d.show()
+        else:
+            for p in args.profile.split(' '):
+                X,Y = naca(p, args.nbPoints, args.finite_TE, args.half_cosine_spacing)
+                for x,y in zip(X,Y):
+                    print(x,y)
 
 if __name__ == "__main__":
     main()
