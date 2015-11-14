@@ -1,3 +1,6 @@
-Code to generate 4 and 5 digit NACA profiles.  Should be pretty self explanatory.
+NACA [![Travis][buildstatus_image_travis]][travisci]
+
+Code to generate 4 and 5 digit NACA profiles. 
+Should be pretty self explanatory.
 
 Problems/Improvements: Dirk Gorissen <dgorissen@gmail.com>
