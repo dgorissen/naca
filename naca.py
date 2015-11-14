@@ -305,7 +305,7 @@ def main():
                 Generate points for NACA profile 2412
                     python {0} -p 2412
                 Generate points for NACA profile 2412 with 300 points
-                    python {0} -p 2412 -n
+                    python {0} -p 2412 -n 300
                 Generate points for NACA profile 2412 and display the result
                     python {0} -p 2412 -d
                 Generate points for NACA profile 2412 with smooth points spacing and display the result
