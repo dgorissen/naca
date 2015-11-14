@@ -1,4 +1,4 @@
-NACA [![Travis][buildstatus_image_travis]][travisci]
+NACA [![Build Status](https://travis-ci.org/Gjacquenot/naca.svg?branch=master)](https://travis-ci.org/Gjacquenot/naca)
 ====
 
 Code to generate 4 and 5 digit NACA profiles. 
