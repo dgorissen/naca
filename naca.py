@@ -302,13 +302,13 @@ def main():
             Examples:
                 Get help
                     python {0} -h
-                Generate points for one profile
+                Generate points for NACA profile 2412
                     python {0} -p 2412
-                Generate points for one profile with 300 points
+                Generate points for NACA profile 2412 with 300 points
                     python {0} -p 2412 -n
-                Generate points for one profile and display the result
+                Generate points for NACA profile 2412 and display the result
                     python {0} -p 2412 -d
-                Generate points for one profile with smooth points spacing and display the result
+                Generate points for NACA profile 2412 with smooth points spacing and display the result
                     python {0} -p 2412 -d -s
                 Generate points for several profiles
                     python {0} -p "2412 23112" -d -s
