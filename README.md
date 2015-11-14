@@ -1,6 +1,9 @@
 NACA [![Travis][buildstatus_image_travis]][travisci]
+====
 
 Code to generate 4 and 5 digit NACA profiles. 
+
+Works with Python 2 and Python 3.
 
 Problems/Improvements: Dirk Gorissen <dgorissen@gmail.com>
 
