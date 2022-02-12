@@ -235,7 +235,7 @@ def naca5(number, n, finite_TE = False, half_cosine_spacing = False):
         zc  = [cld/0.3 * xx for xx in yc1 + yc2]
 
         dyc1_dx = [cld/0.3*(1.0/6.0)*k1*(3*pow(xx,2)-6*m*xx+pow(m,2)*(3-m)) for xx in xc1]
-        dyc2_dx = [cld/0.3*(1.0/6.0)*k1*pow(m,3)]*len(xc2)
+        dyc2_dx = [cld/0.3*-(1.0/6.0)*k1*pow(m,3)]*len(xc2)
 
         dyc_dx = dyc1_dx + dyc2_dx
         theta = [atan(xx) for xx in dyc_dx]
