@@ -34,7 +34,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-from math import cos, sin, tan
+from math import cos, sin, tan, radians
 from math import atan
 from math import pi
 from math import pow
@@ -252,11 +252,40 @@ def naca5(number, n, finite_TE = False, half_cosine_spacing = False):
 
     return X,Z
 
-def naca(number, n, finite_TE = False, half_cosine_spacing = False):
-    if len(number)==4:
-        return naca4(number, n, finite_TE, half_cosine_spacing)
-    elif len(number)==5:
-        return naca5(number, n, finite_TE, half_cosine_spacing)
+
+def rotate_points(p, angle_deg):
+    x = p[0]
+    y = p[1]
+    angle_deg = -angle_deg
+    angle_rad = radians(angle_deg)
+    center_x = sum(x) / len(x)
+    center_y = sum(y) / len(y)
+    
+    rotated_x = []
+    rotated_y = []
+
+    for i in range(len(x)):
+        translated_x = x[i] - center_x
+        translated_y = y[i] - center_y
+        
+        rotated_x_val = translated_x * cos(angle_rad) - translated_y * sin(angle_rad)
+        rotated_y_val = translated_x * sin(angle_rad) + translated_y * cos(angle_rad)
+        
+        final_x = rotated_x_val + center_x
+        final_y = rotated_y_val + center_y
+        
+        rotated_x.append(final_x)
+        rotated_y.append(final_y)
+    
+    return rotated_x, rotated_y
+
+
+def naca(number, n, finite_TE = False, half_cosine_spacing = False, rotation = 0):
+    if len(number) in [4, 5]:
+        points = naca4(number, n, finite_TE, half_cosine_spacing) if len(number) == 4 else naca5(number, n, finite_TE, half_cosine_spacing)
+        if rotation != 0:
+            points = rotate_points(points, rotation)
+        return points
     else:
         raise Exception
 
@@ -311,7 +340,9 @@ def main():
                 Generate points for NACA profile 2412 with smooth points spacing and display the result
                     python {0} -p 2412 -d -s
                 Generate points for several profiles
-                    python {0} -p "2412 23112" -d -s
+                    python {0} -p "2412 23112" -d -s     
+                Generate points and rotate with respect to an attack angle
+                    python {0} -p "2412 23112" -d -s -r 20
             '''.format(os.path.basename(__file__))))
     parser.add_argument('-p','--profile', type = str, \
                         help = 'Profile name or set of profiles names separated by spaces. Example: "0009", "0009 2414 6409"')
@@ -324,6 +355,8 @@ def main():
                         help = 'Finite thickness trailing edge. Default is False, corresponding to zero thickness trailing edge.')
     parser.add_argument('-d','--display', action = 'store_true', \
                         help = 'Flag used to display the profile(s).')
+    parser.add_argument('-r','--rotate', type = int, default = 0,\
+                        help = 'Adds an angle of attack rotation.')
     args = parser.parse_args()
     if args.profile is None:
         demo(nPoints = args.nbPoints, finite_TE = args.finite_TE, half_cosine_spacing = args.half_cosine_spacing)
@@ -331,12 +364,12 @@ def main():
         if args.display:
             d = Display()
             for p in args.profile.split(' '):
-                X,Y = naca(p, args.nbPoints, args.finite_TE, args.half_cosine_spacing)
+                X,Y = naca(p, args.nbPoints, args.finite_TE, args.half_cosine_spacing, args.rotate)
                 d.plot(X, Y, p)
             d.show()
         else:
             for p in args.profile.split(' '):
-                X,Y = naca(p, args.nbPoints, args.finite_TE, args.half_cosine_spacing)
+                X,Y = naca(p, args.nbPoints, args.finite_TE, args.half_cosine_spacing, args.rotate)
                 for x,y in zip(X,Y):
                     print(x,y)
 
