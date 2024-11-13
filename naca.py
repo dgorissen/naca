@@ -40,6 +40,7 @@ from math import pi
 from math import pow
 from math import sqrt
 
+
 def linspace(start,stop,np):
     """
     Emulate Matlab linspace
@@ -291,7 +292,11 @@ def naca(number, n, finite_TE = False, half_cosine_spacing = False, rotation = 0
 
 class Display(object):
     def __init__(self):
+        import numpy as np
+        import matplotlib
+        matplotlib.use('TkAgg')
         import matplotlib.pyplot as plt
+
         self.plt = plt
         self.h = []
         self.label = []
